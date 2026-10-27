@@ -1,0 +1,44 @@
+Here are the most common and useful PromQL (Prometheus Query Language) examples, broken down by what you might want to monitor.
+
+1. Infrastructure & OS Metrics (Node Exporter)
+
+These queries are used to monitor CPU, memory, and disk usage on your servers.
+• CPU Usage Percentage (All Cores Combined):promql
+100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)
+Use code with caution.
+• Memory Usage Percentage:promql
+(1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100
+Use code with caution.
+• Disk Space Usage Percentage (Root Partition):promql
+(1 - (node_filesystem_free_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"})) * 100
+Use code with caution.
+
+2. Application & HTTP Metrics (API Monitoring)
+
+These queries help you monitor the health, traffic, and speed of your web applications or APIs.
+• Total Request Rate (Requests Per Second over the last 5 minutes):promql
+rate(http_requests_total[5m])
+Use code with caution.
+• Error Rate (HTTP 5xx Status Codes):promql
+rate(http_requests_total{status=~"5.*"}[5m])
+Use code with caution.
+• 95th Percentile Response Latency (How fast 95% of requests are):promql
+histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))
+Use code with caution.
+
+3. Docker & Container Metrics (cAdvisor)
+
+If you are running containers (tying back to your Docker setup), use these to track their footprint.
+• CPU Usage by Container:promql
+sum(rate(container_cpu_usage_seconds_total{name!=""}[5m])) by (name) * 100
+Use code with caution.
+• Memory Usage by Container (in Megabytes):promql
+container_memory_usage_bytes{name!=""} / 1024 / 1024
+Use code with caution.
+
+PromQL Cheat Sheet Cheat Sheet
+
+When writing your own queries in Grafana, remember these four core concepts:
+• rate(...): Calculates the per-second increase of a counter over a time window (e.g., [5m]). Always use this for counters like total requests or CPU seconds.
+• sum(...) by (label): Combines your data and groups it by a specific label (like instance, job, or container_name).
+• =~: Allows regex matching (e.g., {status=~"4.*|5.*"} matches all 4xx and 5xx errors).
