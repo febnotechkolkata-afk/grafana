@@ -42,3 +42,72 @@ When writing your own queries in Grafana, remember these four core concepts:
 • rate(...): Calculates the per-second increase of a counter over a time window (e.g., [5m]). Always use this for counters like total requests or CPU seconds.
 • sum(...) by (label): Combines your data and groups it by a specific label (like instance, job, or container_name).
 • =~: Allows regex matching (e.g., {status=~"4.*|5.*"} matches all 4xx and 5xx errors).
+
+------------------------------------------------------------------------
+
+If you want to look at the raw list of every single metric Node Exporter is actively collecting right now, run a query filtering strictly by your job or instance name without a metric identifier:
+{job="node-exporter"}
+
+To verify if Node Exporter is successfully scraping all system collectors without throwing internal errors, check the scraper status:
+node_scrape_collector_success == 0
+
+
+
+Here are the most common and useful PromQL expressions for Node Exporter to build your own Grafana dashboard. These cover the core metrics: CPU, Memory, Disk, and Network.
+
+📊 CPU Metrics
+
+• Total CPU Usage (as a percentage):promql
+100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)
+Use code with caution.
+• CPU Usage Breakdown by Mode (System, User, Iowait):promql
+avg by (mode) (rate(node_cpu_seconds_total{mode!="idle"}[5m])) * 100
+Use code with caution.
+• System Load (1-minute average):promql
+node_load1
+Use code with caution.
+
+🧠 Memory Metrics
+
+• Memory Usage (as a percentage):promql
+100 * (1 - ((node_memory_MemFree_bytes + node_memory_Buffers_bytes + node_memory_Cached_bytes) / node_memory_MemTotal_bytes))
+Use code with caution.
+• Total Available Memory (in Bytes):promql
+node_memory_MemAvailable_bytes
+Use code with caution.
+• Used Swap Space (as a percentage):promql
+100 * (1 - (node_memory_SwapFree_bytes / node_memory_SwapTotal_bytes))
+Use code with caution.
+
+💾 Disk Metrics
+
+• Disk Space Usage by Mount Point (as a percentage):promql
+100 * (1 - (node_filesystem_free_bytes{fstype!~"tmpfs|ramfs"} / node_filesystem_size_bytes{fstype!~"tmpfs|ramfs"}))
+Use code with caution.
+• Disk Read Throughput (Bytes/second):promql
+rate(node_disk_read_bytes_total[5m])
+Use code with caution.
+• Disk Write Throughput (Bytes/second):promql
+rate(node_disk_written_bytes_total[5m])
+Use code with caution.
+
+🌐 Network Metrics
+
+• Network Inbound Traffic (Download Speed in Bits/sec):promql
+rate(node_network_receive_bytes_total{device!~"lo"}[5m]) * 8
+Use code with caution.
+• Network Outbound Traffic (Upload Speed in Bits/sec):promql
+rate(node_network_transmit_bytes_total{device!~"lo"}[5m]) * 8
+Use code with caution.
+
+💡 Pro-Tip for Grafana Dashboard Filters
+
+If you use a template variable in Grafana for your servers (usually named $instance or $node), you should inject the variable into your queries like this:
+promql
+node_load1{instance=~"$instance"}
+Use code with caution.
+If you'd like, I can:
+• Provide ready-to-use alert rules based on these metrics.
+• Help you configure Grafana dashboard template variables for dynamic filtering.
+• Share the official Grafana Dashboard ID for Node Exporter so you can import a pre-made one instantly.
+Let me know how you'd like to proceed!
